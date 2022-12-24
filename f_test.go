@@ -1,6 +1,7 @@
 package faster_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
 	"testing"
@@ -198,6 +199,37 @@ func TestHttp(t *testing.T) {
 				return app.Prefix("storage").Prefix("v1")
 			},
 		},
+		{
+			name:     "Test With A FastRouter instance",
+			method:   "GET",
+			reqRoute: "/v1/hello",
+			route:    "-",
+			response: "",
+			expected: "Hello from v1 router",
+			setup: func(app faster.FastRouter) faster.FastRouter {
+				v1 := faster.New()
+				v1.Get("/hello", func(c *faster.Ctx) error {
+					return c.SendString("Hello from v1 router")
+				})
+				return app.Mount("v1", v1)
+			},
+		},
+		{
+			name:     "Test With A FastRouter instance under a prefix",
+			method:   "GET",
+			reqRoute: "/v1/hello",
+			route:    "-",
+			response: "",
+			expected: "Hello from v1 router",
+			setup: func(app faster.FastRouter) faster.FastRouter {
+				v1 := faster.New()
+				v1.Get("/hello", func(c *faster.Ctx) error {
+					fmt.Println("Hola.....")
+					return c.SendString("Hello from v1 router")
+				})
+				return app.Mount("v1", v1)
+			},
+		},
 	}
 
 	for _, test := range suite {
@@ -208,6 +240,7 @@ func TestHttp(t *testing.T) {
 				// reset method to GET, as STATIC is not a valid http method
 				test.method = "GET"
 			} else {
+
 				test.setup(app).Add(test.method, test.route, func(c *faster.Ctx) error {
 					return c.SendString(test.response)
 				})

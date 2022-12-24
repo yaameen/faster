@@ -11,8 +11,6 @@ type Handler = fiber.Handler
 type Static = fiber.Static
 type Config = fiber.Config
 
-type Router = fiber.Router
-
 type FastRouter interface {
 	Static(prefix string, root string, config ...Static) FastRouter
 	Add(method, path string, handlers ...Handler) FastRouter
@@ -30,6 +28,7 @@ type FastRouter interface {
 	Any(path string, handlers ...Handler) FastRouter
 	Group(handlers ...Handler) FastRouter
 	Prefix(prefix string, handlers ...Handler) FastRouter
+	Mount(prefix string, router FastRouter) FastRouter
 }
 
 type FastApp struct {
@@ -108,6 +107,16 @@ func (h *FastApp) Any(path string, handlers ...Handler) FastRouter {
 	return h.All(path, handlers...)
 }
 
+func (h *FastApp) Mount(prefix string, router FastRouter) FastRouter {
+	if prefix[0] != '/' {
+		prefix = "/" + prefix
+	}
+	if app, ok := router.(*FastApp); ok {
+		h.app.Mount(prefix, app.app)
+	}
+	return h.Prefix(prefix)
+}
+
 func (h *FastApp) Group(handlers ...Handler) FastRouter {
 	grp := &FastGroup{
 		handlers: handlers,
@@ -117,6 +126,9 @@ func (h *FastApp) Group(handlers ...Handler) FastRouter {
 }
 
 func (h *FastApp) Prefix(prefix string, handlers ...Handler) FastRouter {
+	if prefix[0] != '/' {
+		prefix = "/" + prefix
+	}
 	grp := &FastGroup{
 		handlers: handlers,
 		router:   h,
@@ -217,6 +229,13 @@ func New(config ...Config) *FastApp {
 	return &FastApp{
 		app: fiber.New(config...),
 	}
+}
+
+func (h *FastGroup) Mount(prefix string, router FastRouter) FastRouter {
+	for _, v := range h.handlers {
+		router.Use(v)
+	}
+	return h.router.Mount(h.fixPrefix(prefix), router)
 }
 
 func (r *FastGroup) Group(handlers ...Handler) FastRouter {
