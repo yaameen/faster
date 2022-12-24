@@ -10,7 +10,7 @@ import (
 )
 
 func BenchmarkGet(b *testing.B) {
-	app := faster.New()
+	app := faster.New(faster.Config{})
 	app.Get("/", func(c *faster.Ctx) error {
 		return c.SendString("Hello, World!")
 	})

@@ -9,6 +9,7 @@ import (
 type Ctx = fiber.Ctx
 type Handler = fiber.Handler
 type Static = fiber.Static
+type Config = fiber.Config
 
 type Router = fiber.Router
 
@@ -212,9 +213,9 @@ func (h *FastGroup) Any(path string, handlers ...Handler) FastRouter {
 	return h.All(path, handlers...)
 }
 
-func New() *FastApp {
+func New(config ...Config) *FastApp {
 	return &FastApp{
-		app: fiber.New(),
+		app: fiber.New(config...),
 	}
 }
 
