@@ -4,12 +4,14 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/valyala/fasthttp"
 )
 
 type Ctx = fiber.Ctx
 type Handler = fiber.Handler
 type Static = fiber.Static
 type Config = fiber.Config
+type TLSHandler = fiber.TLSHandler
 
 type FastRouter interface {
 	Static(prefix string, root string, config ...Static) FastRouter
@@ -68,6 +70,7 @@ func (h *FastApp) Post(path string, handlers ...Handler) FastRouter {
 	h.app.Post(path, handlers...)
 	return h
 }
+
 func (h *FastApp) Patch(path string, handlers ...Handler) FastRouter {
 	h.app.Patch(path, handlers...)
 	return h
@@ -137,6 +140,42 @@ func (h *FastApp) Prefix(prefix string, handlers ...Handler) FastRouter {
 	return grp
 }
 
+func (r *FastApp) SetTLSHandler(handler TLSHandler) {
+	r.app.SetTLSHandler(&handler)
+}
+
+func (r *FastApp) Config() Config {
+	return r.app.Config()
+}
+
+func (r *FastApp) Handler() fasthttp.RequestHandler {
+	return r.app.Handler()
+}
+
+func (r *FastApp) Stack() [][]*fiber.Route {
+	return r.app.Stack()
+}
+
+func (r *FastApp) HandlersCount() uint32 {
+	return r.app.HandlersCount()
+}
+
+func (r *FastApp) Shutdown() error {
+	return r.app.Shutdown()
+}
+
+func (r *FastApp) Server() *fasthttp.Server {
+	return r.app.Server()
+}
+
+func (r *FastApp) Hooks() *fiber.Hooks {
+	return r.app.Hooks()
+}
+
+func (r *FastApp) ErrorHandler(ctx *fiber.Ctx, err error) error {
+	return r.app.ErrorHandler(ctx, err)
+}
+
 func (r *FastApp) Listen(addr string) error {
 	return r.app.Listen(addr)
 }
@@ -186,6 +225,7 @@ func (h *FastGroup) Post(path string, handlers ...Handler) FastRouter {
 	h.router.Post(h.fixPrefix(path), append(h.handlers, handlers...)...)
 	return h
 }
+
 func (h *FastGroup) Patch(path string, handlers ...Handler) FastRouter {
 	h.router.Patch(h.fixPrefix(path), append(h.handlers, handlers...)...)
 	return h
