@@ -1,6 +1,7 @@
 package faster
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -115,6 +116,7 @@ func (h *FastApp) Mount(prefix string, router FastRouter) FastRouter {
 		prefix = "/" + prefix
 	}
 	if app, ok := router.(*FastApp); ok {
+		println(fmt.Sprintf("mount %s", prefix))
 		h.app.Mount(prefix, app.app)
 	}
 	return h.Prefix(prefix)
@@ -272,10 +274,14 @@ func New(config ...Config) *FastApp {
 }
 
 func (h *FastGroup) Mount(prefix string, router FastRouter) FastRouter {
-	for _, v := range h.handlers {
-		router.Use(v)
+	p := h.fixPrefix(prefix)
+	group := &FastGroup{prefix: &p, router: h.router}
+	for _, v := range router.(*FastApp).app.Stack() {
+		for _, r := range v {
+			group.Add(r.Method, r.Path, append(h.handlers, r.Handlers...)...)
+		}
 	}
-	return h.router.Mount(h.fixPrefix(prefix), router)
+	return group
 }
 
 func (r *FastGroup) Group(handlers ...Handler) FastRouter {
